@@ -23,7 +23,7 @@ pip install uv
 Step3: create venv with 
 ```text
 uv venv
-text
+```
 
 Step4: activate the venv environment with 
 ```text
