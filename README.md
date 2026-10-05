@@ -42,9 +42,12 @@ Step7: Run the server from your terminal with
 python src/mcp_homeserver.py
 ```
 
-Step8: Create another terminal and run the client program with ```text
+Step8: Create another terminal and run the client program with 
+
+```text
 python client.py
 ```
+
 Voila!! 
 You will see "Light_Table UI" popped up.
 Now you can navigate thru the "LIGHT_TABLE UI"
