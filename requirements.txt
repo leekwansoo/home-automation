@@ -1,0 +1,17 @@
+asyncio
+nest_asyncio
+python-dotenv
+langchain
+langchain-ollama
+langchain-community
+langchain-core
+langchain-classic
+langchain-mcp-adapters
+langgraph
+fastapi
+uvicorn
+mcp<2
+fastmcp
+requests
+pydantic
+homeassistant_api

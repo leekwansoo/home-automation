@@ -1,0 +1,8 @@
+[
+    {"entity_id": "light.living_room", "name": "Living Room Light", "state": "off", "brightness": 0, "area": "living_room", "status": "normal"},
+    {"entity_id": "light.kitchen", "name": "Kitchen Light", "state": "off", "brightness": 0, "area": "kitchen", "status": "normal"},
+    {"entity_id": "light.bedroom", "name": "Bedroom Light.", "state": "off", "brightness": 0, "area": "bedroom", "status": "normal"},
+    {"entity_id": "light.bathroom", "name": "Bathroom Light", "state": "off", "brightness": 0, "area": "bathroom", "status": "normal"},
+    {"entity_id": "light.hallway", "name": "Hallway Light", "state": "off", "brightness": 0, "area": "hallway", "status": "normal"},
+    {"entity_id": "switch.fan", "name": "Living Room Fan", "state": "off", "brightness": 0, "area": "living_room", "status": "normal"}
+]

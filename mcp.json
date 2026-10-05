@@ -1,0 +1,53 @@
+{
+    "servers": {
+      
+        "filesystem": {
+          "command": "npx",
+          "args": [
+            "-y",
+            "@modelcontextprotocol/server-filesystem",
+            "C:\\Users\\user2\\Desktop\\mcp-server"
+          ]
+        },
+      "weather-mcp": {
+        "command": "python",
+        "args": [
+          "C:\\Users\\user2\\Desktop\\mcp-server\\src\\mcp_weather.py"
+        ],
+        "env": {},
+        "type": "stdio"
+      },
+      "google-sheets": {
+        "command": "uvx",
+        "args": [
+          "--from",
+          "mcp-google-sheets@latest",
+          "--with",
+          "mcp<2",
+          "mcp-google-sheets"
+        ],
+        "env": {
+          "SERVICE_ACCOUNT_PATH": "C:\\Users\\user2\\Desktop\\mcp-server\\gemini-chat-414606-55850ca18fc6.json"
+        },
+        "type": "stdio"
+      },
+      "math-mcp": {
+        "command": "python",
+        "args": [
+          "C:\\Users\\user2\\Desktop\\mcp-server\\src\\mcp_math.py"
+        ],
+        "env": {},
+        "type": "stdio"
+      },
+      "homeserver-mcp": {
+        "command": "python",
+        "args": [
+          "C:\\Users\\user2\\Desktop\\mcp-server\\src\\mcp_homeserver.py"
+        ],
+        "env": {},
+        "type": "stdio"
+      }
+      
+    },
+    "inputs": []
+  }
