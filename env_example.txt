@@ -1,0 +1,2 @@
+HOME_ASSISTANT_URL = "http://localhost:8123"
+HOME_ASSISTANT_TOKEN = "your_long_lived_access_token_here"
