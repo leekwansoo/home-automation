@@ -41,6 +41,27 @@ def fetch_default_lights():
 
 DEFAULT_LIGHTS = fetch_default_lights()
 
+def fetch_current_lights():
+    """Ask the home server (via MCP) for its current lights; empty list if unreachable."""
+    async def fetch():
+        tools = await client.get_tools()
+        tool = next((t for t in tools if t.name == "ha_get_all_state"), None)
+        if tool is None:
+            raise RuntimeError("server has no 'ha_get_all_state' tool (restart src/mcp_homeserver.py)")
+        result = await tool.ainvoke({}) 
+        if isinstance(result, str):
+            return json.loads(result)
+        blocks = [b["text"] if isinstance(b, dict) else b for b in result]
+        parsed = [json.loads(b) if isinstance(b, str) else b for b in blocks]
+        return parsed[0] if len(parsed) == 1 and isinstance(parsed[0], list) else parsed
+    try:
+        return asyncio.run(fetch())
+    except Exception as e:
+        print(f"Could not load current lights from {URL}: {e}")
+        return []
+
+CURRENT_LIGHTS = fetch_current_lights()
+
 async def init_agent():
     global agent
     try:
@@ -96,7 +117,7 @@ class LightTableUI:
         self.root.title("LIGHT_TABLE - Switch + Brightness Slider")
         self.root.geometry("940x560")
         self.root.configure(bg="#1e1e1e")
-        self.lights = {l["entity_id"]: l.copy() for l in DEFAULT_LIGHTS}
+        self.lights = {l["entity_id"]: {"status": "normal", **l} for l in CURRENT_LIGHTS}
         self.rows_widgets = {}
 
         tk.Label(root, text="LIGHT_TABLE - ON/OFF Switch + Brightness Slider", bg="#1e1e1e", fg="white", font=("Arial", 13, "bold")).pack(pady=8)
@@ -180,19 +201,39 @@ class LightTableUI:
                 "status_var": status_var,
             }
 
+        tk.Frame(root, bg="#1e1e1e", height=10).pack(fill="x")
+        tk.Button(root, text="Get Current Status", bg="#03a9f4", fg="white", font=("Arial", 10, "bold"),
+                  command=self.refresh_status).pack(pady=(0, 5))
+
         log_frame = tk.Frame(root, bg="#1e1e1e")
         log_frame.pack(fill="both", padx=10, pady=5)
         tk.Label(log_frame, text="Agent Activation Log (switch & slider inside cell triggered):", bg="#1e1e1e", fg="#03a9f4", anchor="w", font=("Arial", 9, "bold")).pack(fill="x")
         self.log_text = tk.Text(log_frame, height=7, bg="#111", fg="#00ff88", font=("Consolas", 9))
         self.log_text.pack(fill="both", expand=True)
 
+    def refresh_status(self):
+        current = fetch_current_lights()
+        if not current:
+            self.log("⚠️ Could not get current status from the server")
+            return
+        for l in current:
+            eid = l.get("entity_id")
+            if eid not in self.lights:
+                continue
+            data = self.lights[eid]
+            data.update(l)
+            w = self.rows_widgets[eid]
+            w["switch"].set_state(data["state"])
+            w["brightness_label"].config(text=str(data["brightness"]))
+            w["slider"].set(data["brightness"])
+            w["status_var"].set(data.get("status", "normal"))
+            self.log(f"📋 [{eid}] {data['state'].upper()} | brightness={data['brightness']} | status={data.get('status', 'normal')}")
+
     def on_switch_toggled(self, entity_id, new_state):
         data = self.lights[entity_id]
         data["state"] = new_state
         if new_state == "on" and data["brightness"] == 0:
             data["brightness"] = 5
-        if new_state == "off":
-            data["brightness"] = 0
         w = self.rows_widgets[entity_id]
         w["brightness_label"].config(text=str(data["brightness"]))
         w["slider"].set(data["brightness"])
@@ -231,8 +272,11 @@ class LightTableUI:
         self.activate_agent(entity_id, data["state"], new_val)
 
     def on_status_change(self, entity_id, new_status):
+        print(f"📶 [{entity_id}] STATUS change detected -> {new_status}")
         self.lights[entity_id]["status"] = new_status
         self.log(f"📶 [{entity_id}] STATUS -> {new_status}")
+        d = self.lights[entity_id]
+        self.sync_server(entity_id, d["state"], d["brightness"], new_status)
 
     def log(self, msg):
         from datetime import datetime
@@ -240,7 +284,31 @@ class LightTableUI:
         self.log_text.insert("end", f"[{ts}] {msg}\n")
         self.log_text.see("end")
 
+    def sync_server(self, entity_id, state, brightness=None, status=None):
+        """Push a UI change to the MCP server by calling ha_call_service directly."""
+        if not agent_loop:
+            self.log("⚠️ Server loop not ready; change not sent")
+            return
+        args = {"domain": "light", "service": f"turn_{state}", "entity_id": entity_id}
+        if brightness is not None:
+            args["brightness"] = int(brightness)
+        if status is not None:
+            args["status"] = status
+        async def call():
+            try:
+                tools = await client.get_tools()
+                tool = next((t for t in tools if t.name == "ha_call_service"), None)
+                if tool is None:
+                    raise RuntimeError("server has no 'ha_call_service' tool")
+                await tool.ainvoke(args)
+                self.root.after(0, lambda: self.log(f"✅ ha_call_service {args}"))
+            except Exception as e:
+                err = str(e)
+                self.root.after(0, lambda: self.log(f"❌ ha_call_service failed: {err}"))
+        asyncio.run_coroutine_threadsafe(call(), agent_loop)
+
     def activate_agent(self, entity_id, state, brightness):
+        self.sync_server(entity_id, state, brightness)
         if not agent_loop or not agent:
             self.log(f"⚠️ UI-only: Would call turn_{state} {entity_id}")
             return
@@ -252,7 +320,8 @@ class LightTableUI:
                 content = resp["messages"][-1].content
                 self.root.after(0, lambda: self.log(f"💬 Agent: {content[:200]}"))
             except Exception as e:
-                self.root.after(0, lambda: self.log(f"❌ {e}"))
+                err = str(e)
+                self.root.after(0, lambda: self.log(f"❌ {err}"))
         asyncio.run_coroutine_threadsafe(call(), agent_loop)
 
 if __name__ == "__main__":
