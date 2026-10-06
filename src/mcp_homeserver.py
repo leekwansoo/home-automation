@@ -60,21 +60,41 @@ def ha_get_state(entity_id: str) -> dict:
     return {"entity_id": entity_id, **LIGHTS[entity_id]}
 
 @mcp.tool()
-def ha_call_service(domain: str, service: str, entity_id: str, brightness: int = 255) -> dict:
-    """Call service to turn on/off light. service = turn_on or turn_off"""
+def ha_get_all_state() -> dict:
+    """Get current state of all light/switches."""
+    current_lights_state = []
+    for entity_id, data in LIGHTS.items():
+        LIGHTS[entity_id] = data
+        current_lights_state.append({
+            "entity_id": entity_id,
+            "name": data["name"],
+            "state": data["state"],
+            "area": data["area"],
+            "brightness": data.get("brightness", 0),
+            "status": data.get("status", "normal")
+        })
+    print(f"Current lights state: {current_lights_state}")
+    return current_lights_state
+
+@mcp.tool()
+def ha_call_service(domain: str, service: str, entity_id: str, brightness: int | None = None, status: str = "") -> dict:
+    """Call service to turn on/off light. service = turn_on or turn_off. Optional brightness (0-9) and status."""
     if entity_id not in LIGHTS:
         return {"error": "not found"}
     
+    light = LIGHTS[entity_id]
     if service == "turn_on":
-        LIGHTS[entity_id]["state"] = "on"
-        LIGHTS[entity_id]["brightness"] = brightness
-        print(f"💡 SIMULATOR: {LIGHTS[entity_id]['name']} -> ON ({brightness})")
+        light["state"] = "on"
+        print(f"💡 SIMULATOR: {light['name']} -> ON")
     elif service == "turn_off":
-        LIGHTS[entity_id]["state"] = "off"
-        LIGHTS[entity_id]["brightness"] = 0
-        print(f"🌙 SIMULATOR: {LIGHTS[entity_id]['name']} -> OFF")
+        light["state"] = "off"
+        print(f"🌙 SIMULATOR: {light['name']} -> OFF")
+    if brightness is not None:
+        light["brightness"] = brightness
+    if status:
+        light["status"] = status
 
-    return {"success": True, "entity_id": entity_id, "new_state": LIGHTS[entity_id]}
+    return {"success": True, "entity_id": entity_id, "new_state": light}
 
 @mcp.tool()
 def ha_get_config() -> dict:
