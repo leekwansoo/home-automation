@@ -1,6 +1,6 @@
 # Prerequisite before Starting this Project
 
-if the Ollama is installed, install ollama  in your PC
+if the Ollama is not installed, install ollama  in your PC
 
 Step1: Goto Ollama download site from your browser
 ```text
