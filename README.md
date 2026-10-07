@@ -1,3 +1,28 @@
+# Prerequisite before Starting this Project
+
+if the Ollama is installed, install ollama  in your PC
+
+Step1: Goto Ollama download site from your browser
+```text
+https://github.com/ollama/ollama/releases/tag/v0.35.0
+```
+Download the file
+.  OllamaSetup.exe
+
+Execute the Downloaded setup file
+
+Verify the installed version
+```text
+ollama --version
+```
+Step2:
+
+Download the Qwen-Model from PowerShell Terminal
+```text
+ollama pull qwen2.5:05b
+```
+Then you are Ready to start your project
+
 # Home-Automation
 
 Step1: clone this repository
