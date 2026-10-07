@@ -19,7 +19,7 @@ Step2:
 
 Download the Qwen-Model from PowerShell Terminal
 ```text
-ollama pull qwen2.5:05b
+ollama pull qwen2.5:0.5b
 ```
 Then you are Ready to start your project
 
